@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>BMI 계산기</title>
+    <style>
+        body {
+            font-family: "Malgun Gothic", sans-serif;
+            max-width: 420px;
+            margin: 60px auto;
+            padding: 20px;
+            background: #f5f6fa;
+        }
+        .card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { font-size: 22px; margin-bottom: 20px; }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 10px;
+            background: #4a69bd;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover { background: #3c58a8; }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #eef2ff;
+            border-radius: 8px;
+        }
+        .error {
+            margin-top: 20px;
+            padding: 15px;
+            background: #ffe9e9;
+            color: #c0392b;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>BMI 계산기</h1>
+        <form method="POST">
+            <label for="height">키 (cm)</label>
+            <input type="number" step="any" id="height" name="height" required
+                   value="{{ result.height if result else '' }}">
+
+            <label for="weight">몸무게 (kg)</label>
+            <input type="number" step="any" id="weight" name="weight" required
+                   value="{{ result.weight if result else '' }}">
+
+            <button type="submit">BMI 계산</button>
+        </form>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        {% if result %}
+        <div class="result">
+            <p>BMI: <strong>{{ result.bmi }}</strong></p>
+            <p>결과: <strong>{{ result.category }}</strong></p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
