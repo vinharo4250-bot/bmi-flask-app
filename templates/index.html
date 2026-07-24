@@ -52,6 +52,24 @@
             color: #c0392b;
             border-radius: 8px;
         }
+        .history {
+            margin-top: 25px;
+        }
+        .history h2 {
+            font-size: 15px;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        .history table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .history th, .history td {
+            text-align: left;
+            padding: 6px 4px;
+            border-bottom: 1px solid #eee;
+        }
     </style>
 </head>
 <body>
@@ -77,6 +95,28 @@
         <div class="result">
             <p>BMI: <strong>{{ result.bmi }}</strong></p>
             <p>결과: <strong>{{ result.category }}</strong></p>
+        </div>
+        {% endif %}
+
+        {% if recent_records %}
+        <div class="history">
+            <h2>최근 기록</h2>
+            <table>
+                <tr>
+                    <th>키</th>
+                    <th>몸무게</th>
+                    <th>BMI</th>
+                    <th>결과</th>
+                </tr>
+                {% for r in recent_records %}
+                <tr>
+                    <td>{{ r.height_cm }}</td>
+                    <td>{{ r.weight_kg }}</td>
+                    <td>{{ r.bmi }}</td>
+                    <td>{{ r.category }}</td>
+                </tr>
+                {% endfor %}
+            </table>
         </div>
         {% endif %}
     </div>

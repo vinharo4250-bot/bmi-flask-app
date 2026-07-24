@@ -1,6 +1,13 @@
+import os
+
 from flask import Flask, render_template, request
+from supabase import create_client
 
 app = Flask(__name__)
+
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 
 
 def calc_bmi(height_cm: float, weight_kg: float) -> float:
@@ -19,6 +26,30 @@ def bmi_category(bmi: float) -> str:
         return "비만"
 
 
+def save_record(height, weight, bmi, category):
+    if not supabase:
+        return
+    supabase.table("bmi_records").insert({
+        "height_cm": height,
+        "weight_kg": weight,
+        "bmi": bmi,
+        "category": category,
+    }).execute()
+
+
+def fetch_recent_records(limit=5):
+    if not supabase:
+        return []
+    response = (
+        supabase.table("bmi_records")
+        .select("*")
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return response.data
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
@@ -33,16 +64,21 @@ def index():
                 error = "키와 몸무게는 0보다 큰 값을 입력해주세요."
             else:
                 bmi = calc_bmi(height, weight)
+                category = bmi_category(bmi)
                 result = {
                     "height": height,
                     "weight": weight,
                     "bmi": round(bmi, 2),
-                    "category": bmi_category(bmi),
+                    "category": category,
                 }
+                save_record(height, weight, result["bmi"], category)
         except (ValueError, KeyError):
             error = "올바른 숫자를 입력해주세요."
 
-    return render_template("index.html", result=result, error=error)
+    recent_records = fetch_recent_records()
+    return render_template(
+        "index.html", result=result, error=error, recent_records=recent_records
+    )
 
 
 if __name__ == "__main__":
