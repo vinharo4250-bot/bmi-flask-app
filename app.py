@@ -1,8 +1,10 @@
 import os
 from collections import Counter
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from supabase import create_client
+
+from news_crawler import search_news
 
 app = Flask(__name__)
 
@@ -50,6 +52,42 @@ def index():
     run_at, summary, posts = fetch_latest_run()
     return render_template(
         "index.html", run_at=run_at, summary=summary, posts=posts
+    )
+
+
+@app.route("/news", methods=["GET", "POST"])
+def news():
+    keyword = None
+    days = 7
+    results = []
+    error = None
+    searched = False
+
+    if request.method == "POST":
+        keyword = request.form.get("keyword", "").strip()
+        try:
+            days = int(request.form.get("days", 7))
+        except ValueError:
+            days = 7
+
+        if not keyword:
+            error = "검색어를 입력해주세요."
+        elif days <= 0:
+            error = "최근 N일은 1 이상이어야 합니다."
+        else:
+            try:
+                results = search_news(keyword, days)
+                searched = True
+            except Exception:
+                error = "기사를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+
+    return render_template(
+        "news.html",
+        keyword=keyword,
+        days=days,
+        results=results,
+        error=error,
+        searched=searched,
     )
 
 
