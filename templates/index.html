@@ -2,11 +2,11 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>BMI 계산기</title>
+    <title>가스회사 카페 반응 모니터링</title>
     <style>
         body {
             font-family: "Malgun Gothic", sans-serif;
-            max-width: 420px;
+            max-width: 640px;
             margin: 60px auto;
             padding: 20px;
             background: #f5f6fa;
@@ -17,107 +17,71 @@
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        h1 { font-size: 22px; margin-bottom: 20px; }
-        label { display: block; margin-top: 12px; font-weight: bold; }
-        input[type="number"] {
-            width: 100%;
-            padding: 8px;
-            margin-top: 4px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+        h1 { font-size: 22px; margin-bottom: 4px; }
+        .updated {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 20px;
         }
-        button {
-            margin-top: 20px;
-            width: 100%;
-            padding: 10px;
-            background: #4a69bd;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        button:hover { background: #3c58a8; }
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            background: #eef2ff;
-            border-radius: 8px;
-        }
-        .error {
-            margin-top: 20px;
-            padding: 15px;
-            background: #ffe9e9;
-            color: #c0392b;
-            border-radius: 8px;
-        }
-        .history {
-            margin-top: 25px;
-        }
-        .history h2 {
-            font-size: 15px;
-            margin-bottom: 8px;
-            color: #555;
-        }
-        .history table {
+        h2 { font-size: 15px; margin: 24px 0 8px; color: #555; }
+        table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 14px;
         }
-        .history th, .history td {
+        th, td {
             text-align: left;
-            padding: 6px 4px;
+            padding: 8px 6px;
             border-bottom: 1px solid #eee;
+        }
+        .summary-table th:last-child,
+        .summary-table td:last-child { text-align: right; }
+        .posts-table a {
+            color: #4a69bd;
+            text-decoration: none;
+        }
+        .posts-table a:hover { text-decoration: underline; }
+        .empty {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f5;
+            border-radius: 8px;
+            color: #777;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>BMI 계산기</h1>
-        <form method="POST">
-            <label for="height">키 (cm)</label>
-            <input type="number" step="any" id="height" name="height" required
-                   value="{{ result.height if result else '' }}">
-
-            <label for="weight">몸무게 (kg)</label>
-            <input type="number" step="any" id="weight" name="weight" required
-                   value="{{ result.weight if result else '' }}">
-
-            <button type="submit">BMI 계산</button>
-        </form>
-
-        {% if error %}
-        <div class="error">{{ error }}</div>
+        <h1>가스회사 카페 반응 모니터링</h1>
+        {% if run_at %}
+        <div class="updated">최근 크롤링: {{ run_at }}</div>
         {% endif %}
 
-        {% if result %}
-        <div class="result">
-            <p>BMI: <strong>{{ result.bmi }}</strong></p>
-            <p>결과: <strong>{{ result.category }}</strong></p>
-        </div>
-        {% endif %}
+        {% if summary %}
+        <h2>회사별 게시글 수</h2>
+        <table class="summary-table">
+            <tr><th>기업명</th><th>게시글갯수</th></tr>
+            {% for row in summary %}
+            <tr>
+                <td>{{ row.company }}</td>
+                <td>{{ row.count }}</td>
+            </tr>
+            {% endfor %}
+        </table>
 
-        {% if recent_records %}
-        <div class="history">
-            <h2>최근 기록</h2>
-            <table>
-                <tr>
-                    <th>키</th>
-                    <th>몸무게</th>
-                    <th>BMI</th>
-                    <th>결과</th>
-                </tr>
-                {% for r in recent_records %}
-                <tr>
-                    <td>{{ r.height_cm }}</td>
-                    <td>{{ r.weight_kg }}</td>
-                    <td>{{ r.bmi }}</td>
-                    <td>{{ r.category }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
+        <h2>게시글 목록</h2>
+        <table class="posts-table">
+            <tr><th>기업명</th><th>제목</th></tr>
+            {% for post in posts %}
+            <tr>
+                <td>{{ post.company }}</td>
+                <td><a href="{{ post.url }}" target="_blank" rel="noopener">{{ post.title }}</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="empty">아직 수집된 데이터가 없습니다. GitHub Actions 크롤링이 실행되면 여기에 표시됩니다.</div>
         {% endif %}
     </div>
 </body>

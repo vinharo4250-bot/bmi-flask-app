@@ -1,6 +1,7 @@
 import os
+from collections import Counter
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template
 from supabase import create_client
 
 app = Flask(__name__)
@@ -10,74 +11,45 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 
 
-def calc_bmi(height_cm: float, weight_kg: float) -> float:
-    height_m = height_cm / 100
-    return weight_kg / (height_m ** 2)
-
-
-def bmi_category(bmi: float) -> str:
-    if bmi < 18.5:
-        return "저체중"
-    elif bmi < 23:
-        return "정상"
-    elif bmi < 25:
-        return "과체중"
-    else:
-        return "비만"
-
-
-def save_record(height, weight, bmi, category):
+def fetch_latest_run():
     if not supabase:
-        return
-    supabase.table("bmi_records").insert({
-        "height_cm": height,
-        "weight_kg": weight,
-        "bmi": bmi,
-        "category": category,
-    }).execute()
+        return None, [], []
 
-
-def fetch_recent_records(limit=5):
-    if not supabase:
-        return []
-    response = (
-        supabase.table("bmi_records")
-        .select("*")
-        .order("created_at", desc=True)
-        .limit(limit)
+    latest = (
+        supabase.table("cafe_posts")
+        .select("run_at")
+        .order("run_at", desc=True)
+        .limit(1)
         .execute()
     )
-    return response.data
+    if not latest.data:
+        return None, [], []
+
+    run_at = latest.data[0]["run_at"]
+
+    posts_response = (
+        supabase.table("cafe_posts")
+        .select("*")
+        .eq("run_at", run_at)
+        .order("company")
+        .execute()
+    )
+    posts = posts_response.data
+
+    counts = Counter(p["company"] for p in posts)
+    summary = [
+        {"company": company, "count": count} for company, count in counts.items()
+    ]
+    summary.sort(key=lambda x: x["count"], reverse=True)
+
+    return run_at, summary, posts
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def index():
-    result = None
-    error = None
-
-    if request.method == "POST":
-        try:
-            height = float(request.form["height"])
-            weight = float(request.form["weight"])
-
-            if height <= 0 or weight <= 0:
-                error = "키와 몸무게는 0보다 큰 값을 입력해주세요."
-            else:
-                bmi = calc_bmi(height, weight)
-                category = bmi_category(bmi)
-                result = {
-                    "height": height,
-                    "weight": weight,
-                    "bmi": round(bmi, 2),
-                    "category": category,
-                }
-                save_record(height, weight, result["bmi"], category)
-        except (ValueError, KeyError):
-            error = "올바른 숫자를 입력해주세요."
-
-    recent_records = fetch_recent_records()
+    run_at, summary, posts = fetch_latest_run()
     return render_template(
-        "index.html", result=result, error=error, recent_records=recent_records
+        "index.html", run_at=run_at, summary=summary, posts=posts
     )
 
 
